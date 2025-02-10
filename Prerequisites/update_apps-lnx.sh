@@ -96,17 +96,6 @@ install_or_update "opa" \
      sudo mv opa /usr/local/bin/"
 echo "OPA installed/updated successfully."
 
-# Install Falco
-install_or_update "falco" \
-    "curl -s https://falco.org/repo/falcosecurity-3672BA8F.asc | sudo apt-key add - && \
-     echo 'deb https://download.falco.org/packages/deb stable main' | sudo tee -a /etc/apt/sources.list.d/falcosecurity.list && \
-     sudo apt update && \
-     sudo apt install -y falco && \
-     sudo systemctl start falco && \
-     sudo systemctl enable falco" \
-    "sudo apt upda
-echo "Falco installed/updated successfully."
-
 # Verify installations
 echo "Verifying installations..."
 docker --version
@@ -116,6 +105,5 @@ kubectl version --client
 helm version
 trivy --version
 opa version
-falco --version
 
 echo "All tools installed/updated successfully!"
