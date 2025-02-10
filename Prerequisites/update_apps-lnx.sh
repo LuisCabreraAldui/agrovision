@@ -1,49 +1,122 @@
 #!/bin/bash
 
-apps=(
-  "docker.io"
-  "k3s"
-  "terraform"
-  "kubectl"
-  "helm"
-  "git"
-  "python3"
-)
+# Script to install or update all required tools.
+# Compatible with Ubuntu.
 
-# Function to update and upgrade the system
-update_system() {
-  echo "Actualizando el sistema..."
-  sudo apt update || { echo "Error al ejecutar apt update. Verifica tu conexión a Internet o los permisos de sudo."; exit 1; }
-  sudo apt upgrade -y || { echo "Error al ejecutar apt upgrade. Verifica el sistema."; exit 1; }
-  echo "Sistema actualizado."
-
-  # sudo apt update
-  # sudo apt upgrade -y
+# Function to check if a command exists
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
 }
 
-check_lock() {
-  if sudo fuser /var/lib/dpkg/lock > /dev/null 2>&1; then
-    echo "El bloqueo de dpkg está en uso. Esperando..."
-    sleep 10
-    check_lock
-  fi
-}
+# Function to install or update a tool
+install_or_update() {
+    local tool_name=$1
+    local install_command=$2
+    local update_command=$3
 
-# Function to install or upgrade applications
-update_apps() {
-  for app in "${apps[@]}"; do
-    if dpkg -l | grep -q "^ii  $app "; then
-      echo "$app is installed. Upgrading..."
-      sudo apt install --only-upgrade -y "$app" || { echo "Error al actualizar $app."; continue; }
-      # sudo apt upgrade -y "$app"
+    if command_exists "$tool_name"; then
+        echo "$tool_name is already installed."
+        if [ -n "$update_command" ]; then
+            echo "Updating $tool_name..."
+            eval "$update_command"
+        else
+            echo "No update command provided for $tool_name. Skipping update."
+        fi
     else
-      echo "$app is not installed. Installing..."
-      sudo apt install -y "$app" || { echo "Error al instalar $app."; continue; }
+        echo "Installing $tool_name..."
+        eval "$install_command"
     fi
-  done
 }
 
-# Main script execution
-check_lock
-update_system
-update_apps
+# Update and upgrade system packages
+echo "Updating system packages..."
+sudo apt update && sudo apt upgrade -y
+
+# Install Docker
+install_or_update "docker" "sudo apt install -y docker.io" "sudo apt install --only-upgrade -y docker.io"
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker $USER
+echo "Docker installed/updated successfully."
+
+# Install K3S
+if command_exists "k3s"; then
+    echo "K3S is already installed."
+else
+    echo "Installing K3S..."
+    curl -sfL https://get.k3s.io | sh -
+    echo "K3S installed successfully."
+fi
+
+# Install OpenTofu
+install_or_update "tofu" \
+    "wget https://github.com/opentofu/opentofu/releases/download/v1.9.0/tofu_1.9.0_linux_amd64.zip && \
+     unzip tofu_1.9.0_linux_amd64.zip && \
+     sudo mv tofu /usr/local/bin/ && \
+     rm tofu_1.9.0_linux_amd64.zip" \
+    "wget https://github.com/opentofu/opentofu/releases/download/v1.9.0/tofu_1.9.0_linux_amd64.zip && \
+     unzip tofu_1.9.0_linux_amd64.zip && \
+     sudo mv tofu /usr/local/bin/ && \
+     rm tofu_1.9.0_linux_amd64.zip"
+echo "OpenTofu installed/updated successfully."
+
+# Install kubectl
+install_or_update "kubectl" \
+    "sudo apt install -y apt-transport-https ca-certificates curl && \
+     sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg && \
+     echo 'deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+     sudo apt update && \
+     sudo apt install -y kubectl" \
+    "sudo apt update && sudo apt install --only-upgrade -y kubectl"
+echo "kubectl installed/updated successfully."
+
+# Install Helm
+install_or_update "helm" \
+    "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash" \
+    "curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash"
+echo "Helm installed/updated successfully."
+
+# Install Trivy
+install_or_update "trivy" \
+    "sudo apt install -y wget apt-transport-https gnupg lsb-release && \
+     wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null && \
+     echo 'deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main' | sudo tee -a /etc/apt/sources.list.d/trivy.list && \
+     sudo apt update && \
+     sudo apt install -y trivy" \
+    "sudo apt update && sudo apt install --only-upgrade -y trivy"
+echo "Trivy installed/updated successfully."
+
+# Install OPA
+install_or_update "opa" \
+    "curl -L -o opa https://openpolicyagent.org/downloads/v0.44.0/opa_linux_amd64 && \
+     chmod +x opa && \
+     sudo mv opa /usr/local/bin/" \
+    "curl -L -o opa https://openpolicyagent.org/downloads/v0.44.0/opa_linux_amd64 && \
+     chmod +x opa && \
+     sudo mv opa /usr/local/bin/"
+echo "OPA installed/updated successfully."
+
+# Install Falco
+install_or_update "falco" \
+    "curl -s https://falco.org/repo/falcosecurity-3672BA8F.asc | sudo apt-key add - && \
+     echo 'deb https://download.falco.org/packages/deb stable main' | sudo tee -a /etc/apt/sources.list.d/falcosecurity.list && \
+     sudo apt update && \
+     sudo apt install -y falco && \
+     sudo systemctl start falco && \
+     sudo systemctl enable falco" \
+    "sudo apt update && sudo apt install --only-upgrade -y falco && \
+     sudo systemctl restart falco"
+echo "Falco installed/updated successfully."
+
+# Verify installations
+echo "Verifying installations..."
+docker --version
+k3s --version
+tofu --version
+kubectl version --client
+helm version
+trivy --version
+opa version
+falco --version
+
+echo "All tools installed/updated successfully!"

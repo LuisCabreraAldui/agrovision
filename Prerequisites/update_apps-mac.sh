@@ -8,6 +8,7 @@ apps=(
   "helm"
   "opentofu"
   "git"
+  "python3"
 )
 
 for app in "${apps[@]}"; do
@@ -22,7 +23,7 @@ for app in "${apps[@]}"; do
     if brew search --cask "$app" > /dev/null 2>&1; then
       brew install --cask "$app"
     else
-       en dos brew install "$app"
+      brew install "$app"
     fi
   fi
 done
