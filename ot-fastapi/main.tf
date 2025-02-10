@@ -126,6 +126,7 @@ resource "kubernetes_service" "api_service" {
 }
 
 # Autoscaler for API
+
 resource "kubernetes_horizontal_pod_autoscaler" "api_hpa" {
   metadata {
     name      = "fastapi-app-hpa"
@@ -138,17 +139,43 @@ resource "kubernetes_horizontal_pod_autoscaler" "api_hpa" {
       name = kubernetes_deployment.api_deployment.metadata[0].name
       api_version = "apps/v1"
     }
+
     min_replicas = 2
     max_replicas = 10
-    metrics {
+
+    metric {
       type = "Resource"
       resource {
-        name = "cpu"
-        target_average_utilization = 80
+        name                     = "cpu"
+        target_average_value     = "80m" # Define el valor promedio objetivo (en milicores)
       }
     }
   }
 }
+
+# resource "kubernetes_horizontal_pod_autoscaler" "api_hpa" {
+#   metadata {
+#     name      = "fastapi-app-hpa"
+#     namespace = var.namespace
+#   }
+
+#   spec {
+#     scale_target_ref {
+#       kind = "Deployment"
+#       name = kubernetes_deployment.api_deployment.metadata[0].name
+#       api_version = "apps/v1"
+#     }
+#     min_replicas = 2
+#     max_replicas = 10
+#     metrics {
+#       type = "Resource"
+#       resource {
+#         name = "cpu"
+#         target_average_utilization = 80
+#       }
+#     }
+#   }
+# }
 
 # Outputs
 output "api_service_url" {
