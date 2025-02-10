@@ -64,7 +64,7 @@ echo "OpenTofu installed/updated successfully."
 install_or_update "kubectl" \
     "sudo apt install -y apt-transport-https ca-certificates curl && \
      sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg && \
-     echo 'deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main' | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
+     echo 'deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes main' | sudo tee /etc/apt/sources.list.d/kubernetes.list && \
      sudo apt update && \
      sudo apt install -y kubectl" \
     "sudo apt update && sudo apt install --only-upgrade -y kubectl"
@@ -88,10 +88,10 @@ echo "Trivy installed/updated successfully."
 
 # Install OPA
 install_or_update "opa" \
-    "curl -L -o opa https://openpolicyagent.org/downloads/v0.44.0/opa_linux_amd64 && \
+    "curl -L -o opa https://openpolicyagent.org/downloads/v1.1.0/opa_linux_amd64 && \
      chmod +x opa && \
      sudo mv opa /usr/local/bin/" \
-    "curl -L -o opa https://openpolicyagent.org/downloads/v0.44.0/opa_linux_amd64 && \
+    "curl -L -o opa https://openpolicyagent.org/downloads/v1.1.0/opa_linux_amd64 && \
      chmod +x opa && \
      sudo mv opa /usr/local/bin/"
 echo "OPA installed/updated successfully."
@@ -104,8 +104,7 @@ install_or_update "falco" \
      sudo apt install -y falco && \
      sudo systemctl start falco && \
      sudo systemctl enable falco" \
-    "sudo apt update && sudo apt install --only-upgrade -y falco && \
-     sudo systemctl restart falco"
+    "sudo apt upda
 echo "Falco installed/updated successfully."
 
 # Verify installations
