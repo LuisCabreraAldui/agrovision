@@ -1,29 +1,29 @@
 # Proveedor Kubernetes
 module "provider" {
-  source = "./provider.tf"
+  source = "provider.tf"
 }
 
 # Variables globales
 module "variables" {
-  source = "./variables.tf"
+  source = "variables.tf"
 }
 
 # Despliegue de la API
 module "api_deployment" {
-  source = "./deployments.tf"
+  source = "deployments.tf"
 }
 
 # Despliegue del Worker
 module "worker_deployment" {
-  source = "./deployments.tf"
+  source = "deployments.tf"
 }
 
 # Servicio para la API
 module "api_service" {
-  source = "./services.tf"
+  source = "services.tf"
 }
 
 # Autoscaling de la API
 module "api_autoscaler" {
-  source = "./autoscalers.tf"
+  source = "autoscalers.tf"
 }
